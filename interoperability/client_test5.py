@@ -20,6 +20,13 @@ import unittest
 
 import mqtt.clients.V5 as mqtt_client, time, logging, socket, sys, getopt, traceback
 import mqtt.formats.MQTTV5 as MQTTV5
+import inspect
+
+def start_current_function_name():
+  return "\n🔀🔀🔀>>>>>>> " + inspect.currentframe().f_back.f_code.co_name
+
+def end_current_function_name():
+  return "<<<<<<< " + inspect.currentframe().f_back.f_code.co_name
 
 class Callbacks(mqtt_client.Callback):
 
@@ -37,6 +44,7 @@ class Callbacks(mqtt_client.Callback):
 
   def clear(self):
     self.__init__()
+
 
   def disconnected(self, reasoncode, properties):
     logging.info("disconnected %s %s", str(reasoncode), str(properties))
@@ -123,7 +131,8 @@ class Test(unittest.TestCase):
       bclient = mqtt_client.Client("myclientid2".encode("utf-8"))
       bclient.registerCallback(callback2)
 
-    def test_basic(self):
+    def test_01basic(self):
+      print(start_current_function_name())
       aclient.connect(host=host, port=port)
       aclient.disconnect()
 
@@ -144,7 +153,8 @@ class Test(unittest.TestCase):
       with self.assertRaises(Exception):
         aclient.connect(host=host, port=port, protocolName="hj") # should fail - wrong protocol name
 
-    def test_retained_message(self):
+    def test_02retained_message(self):
+      print(start_current_function_name())
       qos0topic="fromb/qos 0"
       qos1topic="fromb/qos 1"
       qos2topic="fromb/qos2"
@@ -177,7 +187,8 @@ class Test(unittest.TestCase):
 
       cleanRetained()
 
-    def test_will_message(self):
+    def test_03will_message(self):
+      print(start_current_function_name())
       # will messages
       callback.clear()
       callback2.clear()
@@ -202,7 +213,8 @@ class Test(unittest.TestCase):
       self.assertEqual(props.UserProperty, [("a", "2"), ("c", "3")])
 
     # 0 length clientid
-    def test_zero_length_clientid(self):
+    def test_04zero_length_clientid(self):
+      print(start_current_function_name())
       logging.info("Zero length clientid test starting")
       succeeded = True
       try:
@@ -225,9 +237,9 @@ class Test(unittest.TestCase):
         traceback.print_exc()
         succeeded = False
       logging.info("Zero length clientid test %s", "succeeded" if succeeded else "failed")
-      return succeeded
 
-    def test_offline_message_queueing(self):
+    def test_05offline_message_queueing(self):
+      print(start_current_function_name())
       # message queueing for offline clients
       callback.clear()
       callback2.clear()
@@ -254,7 +266,8 @@ class Test(unittest.TestCase):
             ("is" if len(callback.messages) == 3 else "is not"))
 
 
-    def test_overlapping_subscriptions(self):
+    def test_06overlapping_subscriptions(self):
+      print(start_current_function_name())
       # overlapping subscriptions. When there is more than one matching subscription for the same client for a topic,
       # the server may send back one message with the highest QoS of any matching subscription, or one message for
       # each subscription with a matching QoS.
@@ -275,7 +288,8 @@ class Test(unittest.TestCase):
       aclient.disconnect()
 
 
-    def test_keepalive(self):
+    def test_07keepalive(self):
+      print(start_current_function_name())
       # keepalive processing.  We should be kicked off by the server if we don't send or receive any data, and don't send
       # any pings either.
       logging.info("Keepalive test starting")
@@ -294,10 +308,10 @@ class Test(unittest.TestCase):
         succeeded = False
       logging.info("Keepalive test %s", "succeeded" if succeeded else "failed")
       self.assertEqual(succeeded, True)
-      return succeeded
 
 
-    def test_redelivery_on_reconnect(self):
+    def test_08redelivery_on_reconnect(self):
+      print(start_current_function_name())
       # redelivery on reconnect. When a QoS 1 or 2 exchange has not been completed, the server should retry the
       # appropriate MQTT packets
       logging.info("Redelivery on reconnect test starting")
@@ -325,9 +339,9 @@ class Test(unittest.TestCase):
         succeeded = False
       logging.info("Redelivery on reconnect test %s", "succeeded" if succeeded else "failed")
       self.assertEqual(succeeded, True)
-      return succeeded
 
-    def test_subscribe_failure(self):
+    def test_09subscribe_failure(self): # failing with mosquitto
+      print(start_current_function_name())
       # Subscribe failure.  A new feature of MQTT 3.1.1 is the ability to send back negative reponses to subscribe
       # requests.  One way of doing this is to subscribe to a topic which is not allowed to be subscribed to.
       logging.info("Subscribe failure test starting")
@@ -345,9 +359,9 @@ class Test(unittest.TestCase):
         succeeded = False
       logging.info("Subscribe failure test %s", "succeeded" if succeeded else "failed")
       self.assertEqual(succeeded, True)
-      return succeeded
 
-    def test_dollar_topics(self):
+    def test_10dollar_topics(self):
+      print(start_current_function_name())
       # $ topics. The specification says that a topic filter which starts with a wildcard does not match topic names that
       # begin with a $.  Publishing to a topic which starts with a $ may not be allowed on some servers (which is entirely valid),
       # so this test will not work and should be omitted in that case.
@@ -368,9 +382,9 @@ class Test(unittest.TestCase):
         succeeded = False
       logging.info("$ topics test %s", "succeeded" if succeeded else "failed")
       self.assertEqual(succeeded, True)
-      return succeeded
 
-    def test_unsubscribe(self):
+    def test_11unsubscribe(self):
+      print(start_current_function_name())
       callback2.clear()
       bclient.connect(host=host, port=port, cleanstart=True)
       bclient.subscribe([topics[0]], [MQTTV5.SubscribeOptions(2)])
@@ -391,13 +405,15 @@ class Test(unittest.TestCase):
       aclient.disconnect()
       self.assertEqual(len(callback2.messages), 2, callback2.messages)
 
-    def test_session_expiry(self):
+    def test_12session_expiry(self):
+      print(start_current_function_name())
       # no session expiry property == never expire
 
       connect_properties = MQTTV5.Properties(MQTTV5.PacketTypes.CONNECT)
 
       connect_properties.SessionExpiryInterval = 0
       connack = aclient.connect(host=host, port=port, cleanstart=True, properties=connect_properties)
+      # print(connack)
       self.assertEqual(connack.reasonCode.getName(), "Success")
       self.assertEqual(connack.sessionPresent, False)
       aclient.subscribe([topics[0]], [MQTTV5.SubscribeOptions(2)])
@@ -405,12 +421,14 @@ class Test(unittest.TestCase):
 
       # session should immediately expire
       connack = aclient.connect(host=host, port=port, cleanstart=False, properties=connect_properties)
+      # print(connack)
       self.assertEqual(connack.reasonCode.getName(), "Success")
       self.assertEqual(connack.sessionPresent, False)
       aclient.disconnect()
 
       connect_properties.SessionExpiryInterval = 5
       connack = aclient.connect(host=host, port=port, cleanstart=True, properties=connect_properties)
+      # print(connack)
       self.assertEqual(connack.reasonCode.getName(), "Success")
       self.assertEqual(connack.sessionPresent, False)
       aclient.subscribe([topics[0]], [MQTTV5.SubscribeOptions(2)])
@@ -419,6 +437,7 @@ class Test(unittest.TestCase):
       time.sleep(2)
       # session should still exist
       connack = aclient.connect(host=host, port=port, cleanstart=False, properties=connect_properties)
+      # print(connack)
       self.assertEqual(connack.reasonCode.getName(), "Success")
       self.assertEqual(connack.sessionPresent, True)
       aclient.disconnect()
@@ -426,12 +445,14 @@ class Test(unittest.TestCase):
       time.sleep(6)
       # session should not exist
       connack = aclient.connect(host=host, port=port, cleanstart=False, properties=connect_properties)
+      # print(connack)
       self.assertEqual(connack.reasonCode.getName(), "Success")
       self.assertEqual(connack.sessionPresent, False)
       aclient.disconnect()
 
       connect_properties.SessionExpiryInterval = 1
       connack = aclient.connect(host=host, port=port, cleanstart=True, properties=connect_properties)
+      # print(connack)
       self.assertEqual(connack.reasonCode.getName(), "Success")
       self.assertEqual(connack.sessionPresent, False)
       aclient.subscribe([topics[0]], [MQTTV5.SubscribeOptions(2)])
@@ -442,6 +463,7 @@ class Test(unittest.TestCase):
       time.sleep(3)
       # session should still exist
       connack = aclient.connect(host=host, port=port, cleanstart=False, properties=connect_properties)
+      # print(connack)
       self.assertEqual(connack.reasonCode.getName(), "Success")
       self.assertEqual(connack.sessionPresent, True)
       disconnect_properties.SessionExpiryInterval = 0
@@ -449,11 +471,13 @@ class Test(unittest.TestCase):
 
       # session should immediately expire
       connack = aclient.connect(host=host, port=port, cleanstart=False, properties=connect_properties)
+      # print(connack)
       self.assertEqual(connack.reasonCode.getName(), "Success")
       self.assertEqual(connack.sessionPresent, False)
       aclient.disconnect()
 
-    def test_user_properties(self):
+    def test_13user_properties(self):
+      print(start_current_function_name())
       callback.clear()
       aclient.connect(host=host, port=port, cleanstart=True)
       aclient.subscribe([topics[0]], [MQTTV5.SubscribeOptions(2)])
@@ -476,7 +500,8 @@ class Test(unittest.TestCase):
       qoss = [callback.messages[i][2] for i in range(3)]
       self.assertTrue(1 in qoss and 2 in qoss and 0 in qoss, qoss)
 
-    def test_payload_format(self):
+    def test_14payload_format(self):
+      print(start_current_function_name())
       callback.clear()
       aclient.connect(host=host, port=port, cleanstart=True)
       aclient.subscribe([topics[0]], [MQTTV5.SubscribeOptions(2)])
@@ -503,7 +528,8 @@ class Test(unittest.TestCase):
       qoss = [callback.messages[i][2] for i in range(3)]
       self.assertTrue(1 in qoss and 2 in qoss and 0 in qoss, qoss)
 
-    def test_publication_expiry(self):
+    def test_15publication_expiry(self):
+      print(start_current_function_name())
       callback.clear()
       callback2.clear()
       connect_properties = MQTTV5.Properties(MQTTV5.PacketTypes.CONNECT)
@@ -541,7 +567,8 @@ class Test(unittest.TestCase):
         total += interval
         time.sleep(interval)
 
-    def test_subscribe_options(self):
+    def test_16subscribe_options(self):
+      print(start_current_function_name())
       callback.clear()
       callback2.clear()
 
@@ -626,14 +653,16 @@ class Test(unittest.TestCase):
 
       cleanRetained()
 
-    def test_assigned_clientid(self):
+    def test_17assigned_clientid(self):
+      print(start_current_function_name())
       noidclient = mqtt_client.Client("")
       connack = noidclient.connect(host=host, port=port, cleanstart=True)
       noidclient.disconnect()
       logging.info("Assigned client identifier %s" % connack.properties.AssignedClientIdentifier)
       self.assertTrue(connack.properties.AssignedClientIdentifier != "")
 
-    def test_subscribe_identifiers(self):
+    def test_18subscribe_identifiers(self):
+      print(start_current_function_name())
       callback.clear()
       callback2.clear()
 
@@ -669,7 +698,8 @@ class Test(unittest.TestCase):
       callback.clear()
       callback2.clear()
 
-    def test_request_response(self):
+    def test_19request_response(self):
+      print(start_current_function_name())
       callback.clear()
       callback2.clear()
 
@@ -710,7 +740,8 @@ class Test(unittest.TestCase):
       callback.clear()
       callback2.clear()
 
-    def test_client_topic_alias(self):
+    def test_20client_topic_alias(self):
+      print(start_current_function_name())
       callback.clear()
 
       # no server side topic aliases allowed
@@ -772,7 +803,8 @@ class Test(unittest.TestCase):
       #print("disconnect", str(callback.disconnects[0]["reasonCode"]))
       #self.assertEqual(callback.disconnects, 1, callback.disconnects)
 
-    def test_server_topic_alias(self):
+    def test_21server_topic_alias(self):
+      print(start_current_function_name())
       callback.clear()
 
       serverTopicAliasMaximum = 1 # server topic alias allowed
@@ -857,7 +889,8 @@ class Test(unittest.TestCase):
       self.assertFalse(hasattr(callback.messagedicts[2]["properties"], "TopicAlias"), callback.messagedicts[2]["properties"])
 
 
-    def test_maximum_packet_size(self):
+    def test_22maximum_packet_size(self):
+      print(start_current_function_name())
       callback.clear()
 
       # 1. server max packet size
@@ -905,7 +938,8 @@ class Test(unittest.TestCase):
 
       aclient.disconnect()
 
-    def test_server_keep_alive(self):
+    def test_23server_keep_alive(self):
+      print(start_current_function_name())
       callback.clear()
 
       connack = aclient.connect(host=host, port=port, keepalive=120, cleanstart=True)
@@ -915,7 +949,8 @@ class Test(unittest.TestCase):
       aclient.disconnect()
 
 
-    def test_flow_control1(self):
+    def test_24flow_control1(self):
+      print(start_current_function_name())
       testcallback = Callbacks()
       # no callback means no background thread, to control receiving
       testclient = mqtt_client.Client("myclientid".encode("utf-8"))
@@ -995,7 +1030,8 @@ class Test(unittest.TestCase):
 
       testclient.disconnect()
 
-    def test_flow_control2(self):
+    def test_25flow_control2(self):
+      print(start_current_function_name())
       testcallback = Callbacks()
       # no callback means no background thread, to control receiving
       testclient = mqtt_client.Client("myclientid".encode("utf-8"))
@@ -1026,11 +1062,12 @@ class Test(unittest.TestCase):
       self.assertEqual(testcallback.disconnects[0]["reasonCode"].value, 147,
                        testcallback.disconnects[0]["reasonCode"].value)
 
-    def test_will_delay(self):
+    def test_26will_delay(self):
       """
       the will message should be received earlier than the session expiry
 
       """
+      print(start_current_function_name())
       callback.clear()
       callback2.clear()
 
@@ -1128,7 +1165,8 @@ class Test(unittest.TestCase):
       callback.clear()
       callback2.clear()
 
-    def test_shared_subscriptions(self):
+    def test_27shared_subscriptions(self):
+      print(start_current_function_name())
 
       callback.clear()
       callback2.clear()
@@ -1204,7 +1242,7 @@ if __name__ == "__main__":
   nosubscribe_topics = ("test/nosubscribe",)
 
   host = "localhost"
-  port = 1883
+  port = 1810
   for o, a in opts:
     if o in ("--help"):
       usage()

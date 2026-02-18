@@ -19,6 +19,10 @@
 import unittest
 
 import mqtt.clients.V311 as mqtt_client, time, logging, socket, sys, getopt, traceback
+import inspect
+
+def start_current_function_name():
+  return "🔀🔀🔀>>>>>>> " + inspect.currentframe().f_back.f_code.co_name
 
 class Callbacks(mqtt_client.Callback):
 
@@ -107,8 +111,8 @@ class Test(unittest.TestCase):
       bclient = mqtt_client.Client("myclientid2".encode("utf-8"))
       bclient.registerCallback(callback2)
 
-    def testBasic(self):
-      print("Basic test starting")
+    def test_01Basic(self):
+      print(start_current_function_name())
       global aclient
       succeeded = True
       try:
@@ -141,9 +145,9 @@ class Test(unittest.TestCase):
         pass # exception expected
       print("Basic test", "succeeded" if succeeded else "failed")
       self.assertEqual(succeeded, True)
-      return succeeded
 
-    def test_retained_messages(self):
+    def test_02retained_messages(self):
+      print(start_current_function_name())
       qos0topic="fromb/qos 0"
       qos1topic="fromb/qos 1"
       qos2topic="fromb/qos2"
@@ -183,10 +187,10 @@ class Test(unittest.TestCase):
         traceback.print_exc()
       print("Retained message test", "succeeded" if succeeded else "failed")
       self.assertEqual(succeeded, True)
-      return succeeded
 
-    def will_message_test(self):
+    def test_03will_message_test(self):
       # will messages
+      print(start_current_function_name())
       succeeded = True
       callback2.clear()
       assert len(callback2.messages) == 0, callback2.messages
@@ -206,11 +210,10 @@ class Test(unittest.TestCase):
         succeeded = False
       print("Will message test", "succeeded" if succeeded else "failed")
       self.assertEqual(succeeded, True)
-      return succeeded
 
     # 0 length clientid
-    def test_zero_length_clientid(self):
-      print("Zero length clientid test starting")
+    def test_04zero_length_clientid(self):
+      print(start_current_function_name())
       succeeded = True
       try:
         client0 = mqtt_client.Client("")
@@ -232,9 +235,9 @@ class Test(unittest.TestCase):
         succeeded = False
       print("Zero length clientid test", "succeeded" if succeeded else "failed")
       self.assertEqual(succeeded, True)
-      return succeeded
 
-    def test_offline_message_queueing(self):
+    def test_05offline_message_queueing(self):
+      print(start_current_function_name())
       succeeded = True
       try:
         # message queueing for offline clients
@@ -265,9 +268,9 @@ class Test(unittest.TestCase):
         succeeded = False
       print("Offline message queueing test", "succeeded" if succeeded else "failed")
       self.assertEqual(succeeded, True)
-      return succeeded
 
-    def test_overlapping_subscriptions(self):
+    def test_06overlapping_subscriptions(self):
+      print(start_current_function_name())
       # overlapping subscriptions. When there is more than one matching subscription for the same client for a topic,
       # the server may send back one message with the highest QoS of any matching subscription, or one message for
       # each subscription with a matching QoS.
@@ -294,13 +297,12 @@ class Test(unittest.TestCase):
         succeeded = False
       print("Overlapping subscriptions test", "succeeded" if succeeded else "failed")
       self.assertEqual(succeeded, True)
-      return succeeded
 
 
-    def test_keepalive(self):
+    def test_07keepalive(self):
       # keepalive processing.  We should be kicked off by the server if we don't send or receive any data, and don't send
       # any pings either.
-      print("Keepalive test starting")
+      print(start_current_function_name())
       succeeded = True
       try:
         callback2.clear()
@@ -316,13 +318,12 @@ class Test(unittest.TestCase):
         succeeded = False
       print("Keepalive test", "succeeded" if succeeded else "failed")
       self.assertEqual(succeeded, True)
-      return succeeded
 
 
-    def test_redelivery_on_reconnect(self):
+    def test_08redelivery_on_reconnect(self):
       # redelivery on reconnect. When a QoS 1 or 2 exchange has not been completed, the server should retry the
       # appropriate MQTT packets
-      print("Redelivery on reconnect test starting")
+      print(start_current_function_name())
       succeeded = True
       try:
         callback.clear()
@@ -345,12 +346,11 @@ class Test(unittest.TestCase):
         succeeded = False
       print("Redelivery on reconnect test", "succeeded" if succeeded else "failed")
       self.assertEqual(succeeded, True)
-      return succeeded
 
-    def test_subscribe_failure(self):
+    def test_09subscribe_failure(self):
       # Subscribe failure.  A new feature of MQTT 3.1.1 is the ability to send back negative reponses to subscribe
       # requests.  One way of doing this is to subscribe to a topic which is not allowed to be subscribed to.
-      print("Subscribe failure test starting")
+      print(start_current_function_name())
       succeeded = True
       try:
         callback.clear()
@@ -364,14 +364,13 @@ class Test(unittest.TestCase):
         succeeded = False
       print("Subscribe failure test", "succeeded" if succeeded else "failed")
       self.assertEqual(succeeded, True)
-      return succeeded
 
 
-    def test_dollar_topics(self):
+    def test_10dollar_topics(self):
       # $ topics. The specification says that a topic filter which starts with a wildcard does not match topic names that
       # begin with a $.  Publishing to a topic which starts with a $ may not be allowed on some servers (which is entirely valid),
       # so this test will not work and should be omitted in that case.
-      print("$ topics test starting")
+      print(start_current_function_name())
       succeeded = True
       try:
         callback2.clear()
@@ -388,10 +387,9 @@ class Test(unittest.TestCase):
         succeeded = False
       print("$ topics test", "succeeded" if succeeded else "failed")
       self.assertEqual(succeeded, True)
-      return succeeded
 
-    def test_unsubscribe(self):
-      print("Unsubscribe test")
+    def test_11unsubscribe(self):
+      print(start_current_function_name())
       succeeded = True
       try:
         callback2.clear()
@@ -417,12 +415,11 @@ class Test(unittest.TestCase):
         succeeded = False
       self.assertEqual(succeeded, True)
       print("unsubscribe tests", "succeeded" if succeeded else "failed")
-      return succeeded
 
 
 if __name__ == "__main__":
   try:
-    opts, args = getopt.gnu_getopt(sys.argv[1:], "h:p:zdsn:",
+    opts, args = getopt.gnu_getopt(sys.argv[1:], "h:p:vzdsn:",
       ["help", "hostname=", "port=", "iterations="])
   except getopt.GetoptError as err:
     print(err) # will print something like "option -a not recognized"
@@ -437,7 +434,7 @@ if __name__ == "__main__":
   nosubscribe_topics = ("test/nosubscribe",)
 
   host = "localhost"
-  port = 1883
+  port = 1810
   for o, a in opts:
     if o in ("--help"):
       usage()
@@ -448,6 +445,8 @@ if __name__ == "__main__":
       host = a
     elif o in ("-p", "--port"):
       port = int(a)
+      sys.argv.remove("-p") if "-p" in sys.argv else sys.argv.remove("--port")
+      sys.argv.remove(a)
     elif o in ("--iterations"):
       iterations = int(a)
     else:
